@@ -1,37 +1,77 @@
 # Stockroom Desk
 
-A warehouse can have stock on the shelf and still be short on a new order because some of that stock is already promised to other customers. Stockroom Desk tracks those commitments by location and gives an operator a record of every receipt, reservation and dispatch.
+Stockroom Desk is an order and inventory app for a warehouse operator. It shows what is physically on the shelf, what is already reserved for customers, and what can still be sold at each location.
 
-The demo follows Meridian Supply Co., a fictional Lagos distributor operating from **Ikeja Main** and **Lekki Hub**.
+The sample workspace follows **Meridian Supply Co.**, a fictional Lagos distributor with stock at **Ikeja Main** and **Lekki Hub**. Order values use Nigerian naira and activity timestamps use West Africa Time.
 
-[Run locally](#run-locally) · [Try the demo](#try-the-demo) · [Screenshots](#screenshots) · [Build and test](#build-and-test)
+[Screenshots](#screenshots) · [Run locally](#run-locally) · [Reproduce the walkthrough](#reproduce-the-walkthrough) · [Stock rules](#stock-rules) · [Build and test](#build-and-test)
 
-![Stockroom Desk desktop overview with the dispatch queue, order volume, waiting orders and recent orders](docs/screenshots/01-overview-desktop.png)
+## Screenshots
 
-## What the app does
+### Overview
 
-| Screen | What you can do |
-| --- | --- |
-| **Overview** | Find orders ready to dispatch, see which orders need attention and review 7-day or 30-day order volume. |
-| **Orders** | Create an order, check a shortage, reserve stock, dispatch or cancel, and review the order history. |
-| **Inventory** | See what is on hand, reserved and available at each location. Receive stock and filter items below or at their reorder point. |
-| **Activity** | Search receipts, reservations, dispatches and releases by SKU or reference. Each entry shows the change in stock and when it happened. |
+See orders ready to dispatch, stock shortages, recent orders and order volume over 7 or 30 days. The dashboard below includes one order created after seeding.
 
-Orders and Inventory also support CSV exports based on the active filters. Order values use Nigerian naira and timestamps use West Africa Time.
+![Desktop overview with the dispatch queue, order volume, waiting orders and recent orders](docs/screenshots/01-overview-desktop.png)
+
+### Orders and shortages
+
+Search by order or customer, filter by status or show overdue orders, and export the filtered orders to CSV. Each row shows the promised date, location and order value.
+
+![Orders list with status filters, promised dates and values](docs/screenshots/02-orders-list.png)
+
+Opening a waiting order shows which product is short. Riverstone Retail’s order **SO-02400** needs six boxes of hibiscus tea (`TE-HIB-12`) at Ikeja Main, where one box is available.
+
+![Riverstone Retail order with six boxes of hibiscus tea ordered and one available](docs/screenshots/03-order-waiting.png)
+
+### Dispatch and order history
+
+The walkthrough uses a separate order, **SO-02402**, for six cartons of still water at Ikeja Main. The detail view records when the order was created, its stock was reserved and the order was dispatched.
+
+![Dispatched Maple Corner Stores order with six cartons of still water and timestamped history](docs/screenshots/04-order-dispatched.png)
+
+### Inventory and stock movements
+
+Inventory shows **on hand**, **reserved**, **available** and the **reorder point** for each product and location. Operators can receive stock, filter low-stock products and export the filtered inventory to CSV.
+
+![Inventory showing 18 cartons on hand, eight reserved and ten available for BW-750-24](docs/screenshots/05-inventory-balance.png)
+
+Activity shows the quantity changed by each event. For `BW-750-24`, receipt **GRN-1028** adds 12 cartons on hand, reserving **SO-02402** adds six reserved cartons, and dispatch reduces both on-hand and reserved quantities by six.
+
+![Activity log showing receipt GRN-1028 and the reservation and dispatch of SO-02402](docs/screenshots/06-activity-log.png)
+
+### PostgreSQL verification
+
+The result in pgAdmin matches Inventory for the same SKU and location after dispatch. Ikeja Main has **18 on hand, 8 reserved and 10 available**.
+
+![pgAdmin query and Data Output row matching the app's inventory balance for BW-750-24](docs/screenshots/07-postgresql-check.png)
+
+### Mobile overview
+
+The mobile layout keeps **New order**, **Receive stock** and the dispatch queue within reach. The bottom bar links to the four main screens.
+
+<img src="docs/screenshots/08-overview-mobile.png" width="300" alt="Mobile overview with the dispatch queue, quick actions and bottom navigation">
 
 ## Run locally
 
-The project requires Node.js **22.12 or newer** and a running PostgreSQL server. The demo was tested with **Node.js 24** and **PostgreSQL 18**.
+Install **Node.js 22.12 or newer** and run a PostgreSQL server. The walkthrough was recorded with PostgreSQL 18.
 
-1. Create an empty PostgreSQL database named `stockroom_demo` in pgAdmin or psql.
-2. Open a terminal in the project folder. For first-time setup on Windows, copy the example configuration in PowerShell.
+1. Clone the repository and open the project folder.
+
+   ```sh
+   git clone https://github.com/James-DataAnalyst/stockroom-desk.git
+   cd stockroom-desk
+   ```
+
+2. Create an empty PostgreSQL database named `stockroom_demo` in pgAdmin or psql.
+3. In PowerShell, copy the example configuration.
 
    ```powershell
    Copy-Item .env.example .env
    ```
 
-3. In `.env`, set `PGPASSWORD` and match `PGHOST`, `PGPORT`, `PGUSER` and `PGDATABASE` to your PostgreSQL connection. The example uses port `5432` for PostgreSQL and `5173` for the app.
-4. Install dependencies, load the schema and sample data, and start the app.
+4. Set `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE` in your local `.env` to match your PostgreSQL connection.
+5. Install dependencies, apply the schema and seed data, and start the app.
 
    ```powershell
    npm.cmd ci
@@ -39,32 +79,34 @@ The project requires Node.js **22.12 or newer** and a running PostgreSQL server.
    npm.cmd run dev
    ```
 
-5. Open the address printed in the terminal. [Default local address](http://127.0.0.1:5173)
+6. Open the address printed in the terminal. [Default local address](http://127.0.0.1:5173)
 
-On macOS or Linux, copy the configuration with `cp .env.example .env` and use `npm` for the commands above.
+On macOS or Linux, use `cp .env.example .env` for step 3 and `npm` in place of `npm.cmd`.
 
-A fresh database starts with **2,401 orders, 6,001 order lines, 72 products, 180 customers and 11,113 stock movements**. The screenshots include one additional order created during the demo.
+A fresh database contains **2,401 orders, 6,001 order lines, 72 products, 180 customers and 11,113 stock movements**.
 
-## Try the demo
+## Reproduce the walkthrough
 
-The walkthrough follows **SO-02402**, an order from **Maple Corner Stores** for six cartons of still water (`BW-750-24`) at **Ikeja Main**. The freshly seeded location has four cartons available, so the order starts in **Waiting for stock**.
+Start from a freshly seeded database to get the balances below. Use **Ikeja Main** and **Still water 750 ml** (`BW-750-24`). Quantities are in cartons of 24 bottles.
 
-To reproduce it, select **Ikeja Main** and use **New order** to enter the six-carton order. Use **Receive stock** to add 12 cartons at the same location with the reference `GRN-1028`. Reopen the order, choose **Reserve stock**, then choose **Dispatch order** and **Confirm dispatch**.
+1. Open **Inventory** and search for `BW-750-24`. There are 12 cartons on hand and eight already reserved, leaving four available.
+2. Select **New order**. Choose **Maple Corner Stores**, set **Ikeja Main**, leave the promised date at today or choose a future date, and add six cartons. Select **Create order**. The order should show **Waiting for stock**.
+3. Select **Receive stock**, enter 12 cartons for the same product and location, use `GRN-1028` as the supplier reference, and select **Save receipt**.
+4. Reopen the new order in **Orders** and select **Reserve stock**. Then select **Dispatch order** and **Confirm dispatch**.
+5. Open **Activity**, select **Ikeja Main** and search `BW-750-24` to trace the receipt, reservation and dispatch.
 
 | Step | On hand | Reserved | Available |
 | --- | ---: | ---: | ---: |
-| Six-carton order waiting for stock | 12 | 8 | 4 |
+| Order waiting for stock | 12 | 8 | 4 |
 | Receive 12 cartons | 24 | 8 | 16 |
-| Reserve six cartons for the order | 24 | 14 | 10 |
-| Dispatch the six reserved cartons | 18 | 8 | 10 |
+| Reserve 6 cartons | 24 | 14 | 10 |
+| Dispatch 6 cartons | 18 | 8 | 10 |
 
-Search `BW-750-24` in **Activity** to trace the receipt, reservation and dispatch. The log records the quantity changed by each event.
+Available stock stays at ten after dispatch because the six cartons were already set aside during reservation.
 
-![Activity log for BW-750-24 at Ikeja Main with receipt GRN-1028 and order SO-02402](docs/screenshots/06-activity-log.png)
+### Check the balance in pgAdmin
 
-### Verify the stock balance in PostgreSQL
-
-Run this query in the `stockroom_demo` Query Tool and compare the result with **Inventory** for the same SKU and location. The repository also includes queries for checking the active database and seeded record counts. [Inspection queries](db/inspect.sql)
+Open the Query Tool for `stockroom_demo`, run the query below and compare its **Data Output** row with **Inventory** for the same SKU and location. [More inspection queries](db/inspect.sql)
 
 ```sql
 SELECT location, sku, on_hand, reserved, available
@@ -73,62 +115,23 @@ WHERE location_code = 'IKJ'
   AND sku = 'BW-750-24';
 ```
 
-## Screenshots
-
-<details>
-<summary>Orders list and a separate shortage example</summary>
-
-**Orders list** with status filters, promised dates and order values.
-
-![Orders list with waiting, reserved and dispatched orders](docs/screenshots/02-orders-list.png)
-
-**SO-02400** is a separate order for Riverstone Retail. It calls for six boxes of hibiscus tea (`TE-HIB-12`) at Ikeja Main, where one box is available.
-
-![Riverstone Retail order SO-02400 showing six boxes ordered and one available](docs/screenshots/03-order-waiting.png)
-
-</details>
-
-<details>
-<summary>Dispatched order, inventory balance and PostgreSQL check</summary>
-
-**SO-02402** shows the dispatched order and its timestamped history.
-
-![Dispatched Maple Corner Stores order showing the six cartons and the order history](docs/screenshots/04-order-dispatched.png)
-
-**Inventory** shows the stock balance after dispatch.
-
-![Inventory row for BW-750-24 showing 18 cartons on hand, eight reserved and ten available](docs/screenshots/05-inventory-balance.png)
-
-**pgAdmin** returns the same balance from the `stockroom.stock_levels` view.
-
-![pgAdmin SQL query and stock balance result for BW-750-24 at Ikeja Main](docs/screenshots/07-postgresql-check.png)
-
-</details>
-
-<details>
-<summary>Mobile overview</summary>
-
-![Phone layout with the dispatch queue, New order and Receive stock shortcuts, and bottom navigation](docs/screenshots/08-overview-mobile.png)
-
-</details>
-
 ## Stock rules
 
-- **Available stock** is calculated as `on_hand - reserved`. PostgreSQL enforces that the reserved quantity stays between zero and the on-hand balance. [SQL schema](db/001_schema.sql)
-- **Reservation** checks all items in the order and locks their inventory rows in PostgreSQL. Each stock change, order status update and history entry commits in one transaction. Cancelling a reserved order releases its stock.
-- **Order and receipt requests** carry a request ID so a retry can return the original result. [Workflow implementation](server/workflow.mjs)
+- PostgreSQL calculates available stock as `on_hand - reserved` and constrains reserved stock to the range from zero to the on-hand quantity. [SQL schema](db/001_schema.sql)
+- The workflow locks the relevant inventory rows while it checks and reserves stock. Stock balances, movement records and order events commit together. Cancelling a reserved order releases the units for another order.
+- Order and receipt submissions carry request IDs. Retrying an unchanged request returns the existing record. [Workflow implementation](server/workflow.mjs)
 
 ## Stack and project layout
 
-React and TypeScript power the interface, Vite builds the frontend, and an Express API runs on Node.js with PostgreSQL.
+The interface uses **React and TypeScript** with **Vite**. A **Node.js and Express** API handles requests and applies the stock workflow in **PostgreSQL**. **pgAdmin** was used to inspect the database during the walkthrough.
 
 | Path | Contents |
 | --- | --- |
-| `src/` | Overview, Orders, Inventory, Activity and responsive UI |
-| `server/` | API, validation and transactional stock workflows |
+| `src/` | Overview, Orders, Inventory, Activity and responsive interface |
+| `server/` | Express API, validation and transactional stock workflows |
 | `db/` | PostgreSQL schema, fictional seed data and inspection queries |
-| `test/` | Integration tests for order and stock operations |
-| `docs/screenshots/` | Desktop, mobile and PostgreSQL screenshots used in this README |
+| `test/` | Integration tests for orders and stock movements |
+| `docs/screenshots/` | Screenshots used in this README |
 
 ## Build and test
 
@@ -139,15 +142,15 @@ npm.cmd run build
 npm.cmd start
 ```
 
-For integration tests, create a separate empty PostgreSQL database named `stockroom_test` on the same server. The tests seed and write data in that database. For another run, use a fresh database such as `stockroom_test_second` and set the variable to that name.
+For integration tests, create a separate empty PostgreSQL database such as `stockroom_test` on the same server. The tests load sample data and perform stock writes in that database. For a repeat run, create a fresh test database and set the variable to its name.
 
 ```powershell
 $env:STOCKROOM_TEST_DATABASE = "stockroom_test"
 npm.cmd test
 ```
 
-On macOS or Linux, run `STOCKROOM_TEST_DATABASE=stockroom_test npm test` against the empty test database.
+On macOS or Linux, use `STOCKROOM_TEST_DATABASE=stockroom_test npm test`.
 
-Stockroom Desk is a local, single-operator demo. Font notices are included with the project. [Font licences](public/licenses/)
+Stockroom Desk is a local, single-operator demo with fictional data. [Font licences](public/licenses/)
 
 Built by **James Isaac**. [Portfolio](https://www.jamesisaac.dev/) · [LinkedIn](https://www.linkedin.com/in/james-bideveloper/)
